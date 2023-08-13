@@ -100,6 +100,26 @@ def update_user(user_id):
 def delete_user(user_id):
 
     user = User.query.get(user_id)
+    people_favorires = People_Favorites.query.filter_by(id_user = user_id)
+    planets_favorites = Planets_Favorites. query.filter_by(id_user = user_id)
+    vehicles_favorites = Vehicles_Favorites.query.filter_by(id_user = user_id)
+    
+    all_people = list(map(lambda people: people, people_favorires))
+    all_planets = list(map(lambda planet: planet, planets_favorites))
+    all_vehicles = list(map(lambda vehicle: vehicle, vehicles_favorites))
+    
+    if all_people != []:
+        people_favorires = all_people[0]
+        people_favorires.delete()
+        
+    if all_planets != []:
+        planets_favorites = all_planets[0]
+        planets_favorites.delete()
+        
+    if all_vehicles != []:
+        vehicles_favorites = all_vehicles[0]
+        vehicles_favorites.delete()
+    
     if user is None:
         raise APIException('User not found', status_code=404)
 
@@ -460,13 +480,12 @@ def delete_planets(planet_uid):
     planet = Planets.query.filter_by(uid=planet_uid)
     planet_details = Planets_Details.query.filter_by(uid=planet_uid)
     planet_favorites = Planets_Favorites.query.filter_by(id_planet=planet_uid)
-
+    people = People_Details.query.filter_by(homeworld=planet_uid)
+    
     all_planets = list(map(lambda planet: planet, planet))
     all_details = list(
         map(lambda planet_details: planet_details, planet_details))
     all_favorites = list(map(lambda favorites: favorites, planet_favorites))
-
-    people = People_Details.query.filter_by(homeworld=planet_uid)
     all_people = list(map(lambda people: people, people))
 
 
@@ -717,7 +736,7 @@ def delete_vehicles(vehicle_uid):
 
     vehicle = Vehicles.query.filter_by(uid=vehicle_uid)
     vehicle_details = Vehicles_Details.query.filter_by(uid=vehicle_uid)
-    vehicle_favorites = Vehicles_Favorites.query.filter_byU(
+    vehicle_favorites = Vehicles_Favorites.query.filter_by(
         id_vehicle=vehicle_uid)
 
     all_vehicles = list(map(lambda vehicle: vehicle, vehicle))
@@ -859,16 +878,16 @@ def delete_vehicles_details(vehicles_uid):
 
 
 # <-------------------------------Methods Vehicles Favorites------------------------------->
-@app.route('/favorites/vehicles/<int:user_id>')
+@app.route('/favorites/vehicles/<int:user_id>', methods=['POST'])
 def add_favorites_vehicles(user_id):
     request_body = request.get_json(force=True)
 
-    if "id_vehicles" not in request_body:
-        raise APIException('Please enter the id_vehicles', status_code=404)
+    if "id_vehicle" not in request_body:
+        raise APIException('Please enter the id_vehicle', status_code=404)
 
     vehicles_favorites = Vehicles_Favorites(
         id_user=user_id,
-        id_people=request_body['id_vehicles']
+        id_vehicle=request_body['id_vehicle']
     )
 
     vehicles_favorites.save()
@@ -879,13 +898,13 @@ def add_favorites_vehicles(user_id):
     }
     return jsonify(response_body), 201
 
-@app.route('/user/<int:user_id>/favorites/vehicles/<int:vehicles_uid>')
+@app.route('/user/<int:user_id>/favorites/vehicles/<int:vehicles_uid>', methods=['DELETE'])
 def delete_favorites_vehicles(user_id, vehicles_uid):
     vehicles_favorites = Vehicles_Favorites.query.filter_by(
         id_user=user_id, id_vehicle=vehicles_uid)
     all_vehicles = list(map(lambda vehicle: vehicle, vehicles_favorites))
 
-    if all_vehicles != []:
+    if all_vehicles == []:
         raise APIException('Favorites vehicles not found', status_code=404)
     
     vehicles_favorites = all_vehicles[0]
